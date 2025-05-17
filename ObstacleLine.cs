@@ -1,4 +1,5 @@
 ﻿using OpenTK.Mathematics;
+using System.Collections.Generic;
 
 namespace GameOpenGL;
 
@@ -11,6 +12,11 @@ public class ObstacleLine
     public ObstacleLine(float z)
     {
         Z = z;
+    }
+
+    public void AddObstacle(Obstacle obstacle)
+    {
+        Obstacles.Add(obstacle);
     }
 
     public void Update(float dz)

@@ -86,8 +86,15 @@ public class Player
         GL.PushMatrix();
         GL.Translate(0, (Radius * 0.8f / 2f) + (Radius * 0.7f / 2f) * 0.8f, Radius * 0.2f); // Смещаем немного вперед по Z
         GL.Scale(1f, 0.8f, 1f); // Масштабируем плавник если нужно
+        
+        // Устанавливаем более темный цвет для спинного плавника
+        GL.Color3(0.3f, 0.35f, 0.4f); // Темно-серый или почти черный цвет для плавника
+        
         Primitives.Cube(new Vector3(Radius * 0.15f, Radius * 0.7f, Radius * 0.4f));
         GL.PopMatrix();
+        
+        // Возвращаем основной цвет акулы для остальных частей
+        GL.Color3(0.5f, 0.55f, 0.6f);
 
         // Хвостовой плавник (вертикальный)
         GL.PushMatrix();

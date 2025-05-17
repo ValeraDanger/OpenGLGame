@@ -8,7 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="OpenTK" Version="4.9.4" />
+        <PackageReference Include="OpenTK" Version="4.8.2" />
+        <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="textures\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

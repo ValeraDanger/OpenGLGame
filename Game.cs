@@ -291,13 +291,10 @@ public class Game() : GameWindow(GameWindowSettings.Default,
             if (chance < 0.3f) continue;
 
             bool tall = chance > 0.75f && tallLeft > 0;
-            float h = tall ? 1.6f : 0.8f;
             if (tall) tallLeft--;
-
-            line.Obstacles.Add(new Obstacle(h)
-            {
-                Position = new Vector3(x, h / 2f, z)
-            });
+            
+            // Добавляем препятствие в линию
+            line.AddObstacle(new Obstacle(x, z, tall));
         }
 
         if (line.Obstacles.Count > 0)
