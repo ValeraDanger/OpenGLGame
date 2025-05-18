@@ -10,7 +10,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
     new NativeWindowSettings
     {
         ClientSize = new Vector2i(1280, 720),
-        Title = "Kolobok Runner 3D",
+        Title = "Akula vs Bikini Bottom 4D",
         API = ContextAPI.OpenGL,
         Profile = ContextProfile.Compatability,
         APIVersion = new Version(3, 3)
@@ -35,6 +35,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
     private readonly Camera _camera = new();
 
     private readonly List<ObstacleLine> _lines = new();
+    private int _skyTextureId; // Added for sky texture
 
     private int _score = 0, _highScore = 0;
     private const float WorldSpeed = 10f;
@@ -49,6 +50,17 @@ public class Game() : GameWindow(GameWindowSettings.Default,
 
         GL.ClearColor(0.2f, 0.4f, 0.6f, 1f); // Синеватый цвет воды
         _highScore = File.Exists("highscore.txt") ? int.Parse(File.ReadAllText("highscore.txt")) : 0;
+
+        // Load sky texture
+        try
+        {
+            _skyTextureId = TextureManager.LoadTexture("textures/sky.png"); // Ensure sky.png is in textures folder
+        }
+        catch (System.IO.FileNotFoundException e)
+        {
+            Console.WriteLine($"Sky texture not found: {e.Message}");
+            // Handle error, maybe use a default background color or no sky
+        }
     }
 
     protected override void OnResize(ResizeEventArgs e)
@@ -106,7 +118,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
             {
                 line.Passed = true;
                 _score++;
-                Title = $"Kolobok Runner 3D   |   Score: {_score}    Best: {_highScore}";
+                Title = $"Akula vs Bikini Bottom 4D   |   Score: {_score}    Best: {_highScore}";
             }
 
             if (line.Z > _player.Position.Z + 20f)
@@ -141,6 +153,8 @@ public class Game() : GameWindow(GameWindowSettings.Default,
     {
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
+        RenderSky(); // Draw the sky background first
+
         _camera.Follow(_player.Position);
         GL.MatrixMode(MatrixMode.Modelview);
         Matrix4 view = _camera.ViewMatrix;
@@ -155,6 +169,43 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         else if (_state == State.GameOver) RenderGameOverOverlay();
 
         SwapBuffers();
+    }
+
+    private void RenderSky()
+    {
+        if (_skyTextureId == 0) return; // Sky texture not loaded
+
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PushMatrix();
+        GL.LoadIdentity();
+        GL.Ortho(0, 1, 1, 0, -1, 1); // Ortho projection, Y flipped for typical image coords
+
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PushMatrix();
+        GL.LoadIdentity();
+
+        GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Fog);      // Sky should not be affected by fog
+        GL.Enable(EnableCap.Texture2D);
+        GL.BindTexture(TextureTarget.Texture2D, _skyTextureId);
+
+        GL.Color3(1f, 1f, 1f); // White color to render texture without tint
+
+        GL.Begin(PrimitiveType.Quads);
+        GL.TexCoord2(0, 0); GL.Vertex2(0, 0);
+        GL.TexCoord2(1, 0); GL.Vertex2(1, 0);
+        GL.TexCoord2(1, 1); GL.Vertex2(1, 1);
+        GL.TexCoord2(0, 1); GL.Vertex2(0, 1);
+        GL.End();
+
+        GL.Disable(EnableCap.Texture2D);
+        GL.Enable(EnableCap.DepthTest); // Re-enable depth test for 3D scene
+        GL.Enable(EnableCap.Fog);       // Re-enable fog for 3D scene
+
+        GL.MatrixMode(MatrixMode.Projection);
+        GL.PopMatrix();
+        GL.MatrixMode(MatrixMode.Modelview);
+        GL.PopMatrix();
     }
 
     private void RenderHud()
@@ -262,7 +313,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         _player.Reset();
         _lines.Clear();
         _score = 0;
-        Title = "Kolobok Runner 3D";
+        Title = "Akula vs Bikini Bottom 4D";
     }
 
     private void EnterMenu() => _state = State.Menu;
