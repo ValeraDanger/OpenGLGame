@@ -42,14 +42,47 @@ public class Game() : GameWindow(GameWindowSettings.Default,
 
     protected override void OnLoad()
     {
+        GL.Enable(EnableCap.DepthTest); // Убедимся, что тест глубины включен
+
         GL.Enable(EnableCap.Fog);
         GL.Fog(FogParameter.FogMode, (int)FogMode.Linear);
-        GL.Fog(FogParameter.FogStart, 30f); // Можно уменьшить для более плотного тумана
-        GL.Fog(FogParameter.FogEnd, 80f);   // Можно уменьшить для более плотного тумана
-        GL.Fog(FogParameter.FogColor, new float[] { 0.1f, 0.3f, 0.5f, 1f }); // Глубокий синий туман
+        GL.Fog(FogParameter.FogStart, 30f);
+        GL.Fog(FogParameter.FogEnd, 80f);
+        GL.Fog(FogParameter.FogColor, new float[] { 0.1f, 0.3f, 0.5f, 1f });
 
-        GL.ClearColor(0.2f, 0.4f, 0.6f, 1f); // Синеватый цвет воды
+        GL.ClearColor(0.2f, 0.4f, 0.6f, 1f);
         _highScore = File.Exists("highscore.txt") ? int.Parse(File.ReadAllText("highscore.txt")) : 0;
+
+        // Настройка освещения
+        GL.Enable(EnableCap.Lighting);
+
+        // Light0 (основной, направленный сверху-спереди)
+        GL.Enable(EnableCap.Light0);
+        float[] light0Position = { 0.5f, 1.5f, 1.0f, 0.0f }; // Направленный свет
+        GL.Light(LightName.Light0, LightParameter.Position, light0Position);
+        GL.Light(LightName.Light0, LightParameter.Ambient, new float[] { 0.2f, 0.2f, 0.2f, 1.0f }); // Меньше общего эмбиента
+        GL.Light(LightName.Light0, LightParameter.Diffuse, new float[] { 0.7f, 0.7f, 0.7f, 1.0f });
+        GL.Light(LightName.Light0, LightParameter.Specular, new float[] { 0.8f, 0.8f, 0.8f, 1.0f });
+
+        // Light1 (дополнительный, слева от дорожки, позиционный)
+        GL.Enable(EnableCap.Light1);
+        float[] light1Position = { -15.0f, 5.0f, 0.0f, 1.0f }; // Позиционный свет слева, немного сверху
+        float[] light1Ambient = { 0.1f, 0.1f, 0.1f, 1.0f };
+        float[] light1Diffuse = { 0.5f, 0.5f, 0.5f, 1.0f }; // Синий оттенок для бокового света
+        float[] light1Specular = { 0.6f, 0.6f, 0.6f, 1.0f };
+        GL.Light(LightName.Light1, LightParameter.Position, light1Position);
+        GL.Light(LightName.Light1, LightParameter.Ambient, light1Ambient);
+        GL.Light(LightName.Light1, LightParameter.Diffuse, light1Diffuse);
+        GL.Light(LightName.Light1, LightParameter.Specular, light1Specular);
+        // Можно добавить затухание для Light1, если он слишком яркий на расстоянии
+        // GL.Light(LightName.Light1, LightParameter.ConstantAttenuation, 0.5f);
+        // GL.Light(LightName.Light1, LightParameter.LinearAttenuation, 0.05f);
+        // GL.Light(LightName.Light1, LightParameter.QuadraticAttenuation, 0.01f);
+
+        GL.Enable(EnableCap.ColorMaterial);
+        GL.ColorMaterial(MaterialFace.FrontAndBack, ColorMaterialParameter.AmbientAndDiffuse);
+        
+        GL.Enable(EnableCap.Normalize); // Важно для корректного освещения при масштабировании
 
         // Load sky texture
         try
@@ -160,15 +193,60 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         Matrix4 view = _camera.ViewMatrix;
         GL.LoadMatrix(ref view);
 
+        // Включаем освещение для 3D сцены
+        GL.Enable(EnableCap.Lighting);
+        GL.Enable(EnableCap.DepthTest); // Убедимся, что тест глубины включен для 3D объектов
+
         _laneManager.Draw();
         foreach (var line in _lines) line.Draw();
+
+        // Отрисовка тени игрока
+        DrawPlayerShadow();
+
         _player.Draw();
+
+        // Отключаем освещение для 2D элементов HUD/Menu
+        GL.Disable(EnableCap.Lighting);
 
         if (_state == State.Play) RenderHud();
         else if (_state == State.Menu) RenderMenu();
         else if (_state == State.GameOver) RenderGameOverOverlay();
 
         SwapBuffers();
+    }
+
+    private void DrawPlayerShadow()
+    {
+        GL.PushMatrix();
+        
+        // Тени не должны быть освещены и не должны писать в буфер глубины, чтобы не перекрывать другие объекты некорректно
+        GL.Disable(EnableCap.Lighting);
+        GL.DepthMask(false); // Отключаем запись в буфер глубины для тени
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        
+        GL.Color4(0.0f, 0.0f, 0.0f, 0.4f); // Цвет тени: черный, полупрозрачный
+
+        float groundLevel = 0.015f; // Чуть выше уровня дороги (yMainPath в LaneManager ~0.01f)
+        Vector3 playerPos = _player.Position;
+        float playerRoll = _player.GetRollAngle(); // Получаем угол наклона игрока
+
+        GL.Translate(playerPos.X, groundLevel, playerPos.Z);
+        GL.Rotate(playerRoll, Vector3.UnitZ); // Применяем наклон игрока к тени
+        GL.Scale(1.0f, 0.05f, 1.0f);          // Сплющиваем тень по оси Y
+
+        // Рисуем основную форму тела акулы для тени
+        // Используем константу Player.Radius, которую нужно сделать public
+        GL.PushMatrix();
+        GL.Scale(1f, 0.8f, 2.5f); // Масштабы тела акулы из Player.Draw()
+        Primitives.Cube(new Vector3(Player.Radius, Player.Radius, Player.Radius));
+        GL.PopMatrix();
+        
+        GL.Disable(EnableCap.Blend);
+        GL.DepthMask(true); // Включаем обратно запись в буфер глубины
+        // GL.Enable(EnableCap.Lighting); // Освещение будет включено перед рендерингом _player.Draw()
+        
+        GL.PopMatrix();
     }
 
     private void RenderSky()
@@ -186,6 +264,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
 
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Fog);      // Sky should not be affected by fog
+        GL.Disable(EnableCap.Lighting); // Небо не должно быть освещено
         GL.Enable(EnableCap.Texture2D);
         GL.BindTexture(TextureTarget.Texture2D, _skyTextureId);
 
@@ -218,6 +297,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         GL.LoadIdentity();
 
         GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Lighting); // HUD не освещается
         GL.Color3(1f, 1f, 1f);
         BitmapText.Draw($"SCORE: {_score}", 0.03f, 0.95f, 0.04f);
         GL.Enable(EnableCap.DepthTest);
@@ -236,6 +316,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         GL.LoadIdentity();
 
         GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Lighting); // Меню не освещается
         
         GL.Color3(0.1f, 0.1f, 0.1f);
         Primitives.QuadXz(2, 2);
@@ -276,6 +357,7 @@ public class Game() : GameWindow(GameWindowSettings.Default,
         GL.LoadIdentity();
 
         GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Lighting); // Оверлей не освещается
         GL.Enable(EnableCap.Blend);
         GL.BlendFunc(BlendingFactor.SrcAlpha,
             BlendingFactor.OneMinusSrcAlpha);

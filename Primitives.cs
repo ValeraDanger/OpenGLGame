@@ -5,16 +5,15 @@ namespace GameOpenGL;
 
 public static class Primitives
 {
-    public static void QuadXz(float width, float length,
-        float offsetX = 0f, float offsetZ = 0f)
+    public static void QuadXz(float w, float h, float x = 0, float z = 0)
     {
-        float w = width / 2f;
-        float l = length / 2f;
+        float width = w / 2f;
+        float length = h / 2f;
         GL.Begin(PrimitiveType.Quads);
-        GL.Vertex3(offsetX - w, 0, offsetZ - l);
-        GL.Vertex3(offsetX + w, 0, offsetZ - l);
-        GL.Vertex3(offsetX + w, 0, offsetZ + l);
-        GL.Vertex3(offsetX - w, 0, offsetZ + l);
+        GL.Vertex3(x - width, 0, z - length);
+        GL.Vertex3(x + width, 0, z - length);
+        GL.Vertex3(x + width, 0, z + length);
+        GL.Vertex3(x - width, 0, z + length);
         GL.End();
     }
 
@@ -47,31 +46,37 @@ public static class Primitives
         Vector3 h = s / 2f;
         GL.Begin(PrimitiveType.Quads);
         // фронт
+        GL.Normal3(0.0f, 0.0f, 1.0f);
         GL.Vertex3(-h.X, -h.Y, h.Z);
         GL.Vertex3(h.X, -h.Y, h.Z);
         GL.Vertex3(h.X, h.Y, h.Z);
         GL.Vertex3(-h.X, h.Y, h.Z);
         // зад
+        GL.Normal3(0.0f, 0.0f, -1.0f);
         GL.Vertex3(-h.X, -h.Y, -h.Z);
         GL.Vertex3(-h.X, h.Y, -h.Z);
         GL.Vertex3(h.X, h.Y, -h.Z);
         GL.Vertex3(h.X, -h.Y, -h.Z);
         // лево
+        GL.Normal3(-1.0f, 0.0f, 0.0f);
         GL.Vertex3(-h.X, -h.Y, -h.Z);
         GL.Vertex3(-h.X, -h.Y, h.Z);
         GL.Vertex3(-h.X, h.Y, h.Z);
         GL.Vertex3(-h.X, h.Y, -h.Z);
         // право
+        GL.Normal3(1.0f, 0.0f, 0.0f);
         GL.Vertex3(h.X, -h.Y, -h.Z);
         GL.Vertex3(h.X, h.Y, -h.Z);
         GL.Vertex3(h.X, h.Y, h.Z);
         GL.Vertex3(h.X, -h.Y, h.Z);
         // верх
+        GL.Normal3(0.0f, 1.0f, 0.0f);
         GL.Vertex3(-h.X, h.Y, -h.Z);
         GL.Vertex3(-h.X, h.Y, h.Z);
         GL.Vertex3(h.X, h.Y, h.Z);
         GL.Vertex3(h.X, h.Y, -h.Z);
         // низ
+        GL.Normal3(0.0f, -1.0f, 0.0f);
         GL.Vertex3(-h.X, -h.Y, -h.Z);
         GL.Vertex3(h.X, -h.Y, -h.Z);
         GL.Vertex3(h.X, -h.Y, h.Z);

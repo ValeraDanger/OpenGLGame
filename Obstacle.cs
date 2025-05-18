@@ -58,18 +58,20 @@ public class Obstacle
     {
         GL.PushMatrix();
         GL.Translate(Position);
+
+        // Установка материала для блеска
+        float[] specReflection = { 0.9f, 0.9f, 0.9f, 1.0f }; // Яркий белый блик
+        GL.Material(MaterialFace.Front, MaterialParameter.Specular, specReflection);
+        GL.Material(MaterialFace.Front, MaterialParameter.Shininess, 100.0f); // Высокое значение для резкого блика
         
         if (_texturesLoaded)
         {
-            // Включаем текстурирование
             GL.Enable(EnableCap.Texture2D);
             GL.BindTexture(TextureTarget.Texture2D, _isTall ? _tallTextureId : _shortTextureId);
-            GL.Color3(1.0f, 1.0f, 1.0f); // Белый цвет для отображения текстуры без искажения цвета
+            GL.Color3(1.0f, 1.0f, 1.0f); 
             
-            // Рисуем текстурированный куб
             DrawTexturedCube(Size);
             
-            // Отключаем текстурирование
             GL.Disable(EnableCap.Texture2D);
         }
         else
@@ -78,7 +80,39 @@ public class Obstacle
             GL.Color3(1.0f, 0.0f, 0.0f);
             Primitives.Cube(Size);
         }
-        
+
+        // Сброс свойств материала к значениям по умолчанию (или к другим, если нужно)
+        float[] defaultSpec = { 0.0f, 0.0f, 0.0f, 1.0f }; // Без блика
+        GL.Material(MaterialFace.Front, MaterialParameter.Specular, defaultSpec);
+        GL.Material(MaterialFace.Front, MaterialParameter.Shininess, 0.0f);
+
+        GL.PopMatrix();
+    }
+
+    public void DrawShadow()
+    {
+        GL.PushMatrix();
+
+        GL.Disable(EnableCap.Lighting); // Тени не освещаются
+        GL.DepthMask(false);            // Не пишем в буфер глубины
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+        GL.Color4(0.0f, 0.0f, 0.0f, 0.35f); // Цвет тени: черный, полупрозрачный
+
+        const float groundLevel = 0.015f; // Тот же уровень, что и у тени игрока
+
+        GL.Translate(Position.X, groundLevel, Position.Z);
+        GL.Scale(1.0f, 0.05f, 1.0f); // Сплющиваем тень
+
+        // Рисуем базовую форму препятствия (куб) для тени
+        // Используем Size препятствия, чтобы тень соответствовала его размерам
+        Primitives.Cube(Size); 
+
+        GL.Disable(EnableCap.Blend);
+        GL.DepthMask(true); // Включаем обратно запись в буфер глубины
+        // GL.Enable(EnableCap.Lighting); // Освещение будет включено основным рендер-циклом
+
         GL.PopMatrix();
     }
     
@@ -89,40 +123,46 @@ public class Obstacle
         GL.Begin(PrimitiveType.Quads);
         
         // Передняя грань
+        GL.Normal3(0.0f, 0.0f, 1.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(-h.X, -h.Y, h.Z);
         GL.TexCoord2(1, 0); GL.Vertex3(h.X, -h.Y, h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(h.X, h.Y, h.Z);
         GL.TexCoord2(0, 1); GL.Vertex3(-h.X, h.Y, h.Z);
         
         // Задняя грань
+        GL.Normal3(0.0f, 0.0f, -1.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(-h.X, -h.Y, -h.Z);
         GL.TexCoord2(1, 0); GL.Vertex3(h.X, -h.Y, -h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(h.X, h.Y, -h.Z);
         GL.TexCoord2(0, 1); GL.Vertex3(-h.X, h.Y, -h.Z);
         
         // Левая грань
+        GL.Normal3(-1.0f, 0.0f, 0.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(-h.X, -h.Y, -h.Z);
         GL.TexCoord2(1, 0); GL.Vertex3(-h.X, -h.Y, h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(-h.X, h.Y, h.Z);
         GL.TexCoord2(0, 1); GL.Vertex3(-h.X, h.Y, -h.Z);
         
         // Правая грань
+        GL.Normal3(1.0f, 0.0f, 0.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(h.X, -h.Y, -h.Z);
         GL.TexCoord2(1, 0); GL.Vertex3(h.X, -h.Y, h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(h.X, h.Y, h.Z);
         GL.TexCoord2(0, 1); GL.Vertex3(h.X, h.Y, -h.Z);
         
         // Верхняя грань
+        GL.Normal3(0.0f, 1.0f, 0.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(-h.X, h.Y, -h.Z);
-        GL.TexCoord2(1, 0); GL.Vertex3(-h.X, h.Y, h.Z);
+        GL.TexCoord2(1, 0); GL.Vertex3(h.X, h.Y, -h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(h.X, h.Y, h.Z);
-        GL.TexCoord2(0, 1); GL.Vertex3(h.X, h.Y, -h.Z);
+        GL.TexCoord2(0, 1); GL.Vertex3(-h.X, h.Y, h.Z);
         
         // Нижняя грань
+        GL.Normal3(0.0f, -1.0f, 0.0f);
         GL.TexCoord2(0, 0); GL.Vertex3(-h.X, -h.Y, -h.Z);
-        GL.TexCoord2(1, 0); GL.Vertex3(-h.X, -h.Y, h.Z);
+        GL.TexCoord2(1, 0); GL.Vertex3(h.X, -h.Y, -h.Z);
         GL.TexCoord2(1, 1); GL.Vertex3(h.X, -h.Y, h.Z);
-        GL.TexCoord2(0, 1); GL.Vertex3(h.X, -h.Y, -h.Z);
+        GL.TexCoord2(0, 1); GL.Vertex3(-h.X, -h.Y, h.Z);
         
         GL.End();
     }

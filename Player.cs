@@ -21,7 +21,7 @@ public class Player
 
     private float _rollAngle = 0f;
 
-    private const float Radius = 0.5f;
+    public const float Radius = 0.5f;
 
     // скорость вращения
     private const float RollRate = 10f * 360f / (MathF.PI * 2f * Radius);
@@ -50,6 +50,8 @@ public class Player
             _velocityY = 0f;
         }
     }
+
+    public float GetRollAngle() => _rollAngle;
 
     public void Reset()
     {

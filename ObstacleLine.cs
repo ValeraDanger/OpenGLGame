@@ -28,7 +28,10 @@ public class ObstacleLine
 
     public void Draw()
     {
-        foreach (var ob in Obstacles)
-            ob.Draw();
+        foreach (var obstacle in Obstacles)
+        {
+            obstacle.DrawShadow(); // Рисуем тень перед препятствием
+            obstacle.Draw();
+        }
     }
 }
